@@ -1,6 +1,6 @@
 # Daily Quiz
 
-Editorial/art-deco daily quiz app. Two-tier: signed-in (Supabase, synced across devices) and visitor (localStorage, single-device, BYO Anthropic key). 10 Q/day at 4am local rollover, 7 MC + 3 short answer, Claude generates and grades.
+Two-tier: signed-in (Supabase, synced across devices) and visitor (localStorage, single-device, BYO Anthropic key). 10 Q/day at 4am local rollover, 7 MC + 3 short answer, Claude generates and grades.
 
 ## Stack
 
