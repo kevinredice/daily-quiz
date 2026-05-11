@@ -299,31 +299,34 @@ Why quiz this: [one sentence]`
         )}
       </div>
 
-      {editing && (
+      {editing === 'new' && (
         <TopicEditor
-          topic={editing === 'new' ? null : editing}
+          topic={null}
           existingIds={topics.map(t => t.id)}
-          onSave={async (t) => {
-            await adapter.upsertTopic(t)
-            await reload()
-            setEditing(null)
-          }}
+          onSave={async (t) => { await adapter.upsertTopic(t); await reload(); setEditing(null) }}
           onCancel={() => setEditing(null)}
-          onDelete={async (id) => {
-            if (!confirm('Permanently delete this topic? Quiz history is kept.')) return
-            await adapter.deleteTopic(id)
-            await reload()
-            setEditing(null)
-          }}
+          onDelete={null}
         />
       )}
 
-      <div className="card">
-        {sorted.length === 0 ? (
-          <div className="empty">No topics in this filter.</div>
+      {sorted.length === 0 ? (
+        <div className="card"><div className="empty">No topics in this filter.</div></div>
+      ) : sorted.map(t =>
+        editing && editing !== 'new' && editing.id === t.id ? (
+          <TopicEditor
+            key={t.id}
+            topic={editing}
+            existingIds={topics.map(x => x.id)}
+            onSave={async (updated) => { await adapter.upsertTopic(updated); await reload(); setEditing(null) }}
+            onCancel={() => setEditing(null)}
+            onDelete={async (id) => {
+              if (!confirm('Permanently delete this topic? Quiz history is kept.')) return
+              await adapter.deleteTopic(id); await reload(); setEditing(null)
+            }}
+          />
         ) : (
-          sorted.map(t => (
-            <div key={t.id} className="topic-row">
+          <div key={t.id} className="card" style={{ marginBottom: '0.5rem', padding: '1rem 1.2rem' }}>
+            <div className="topic-row" style={{ borderBottom: 'none', padding: 0 }}>
               <div style={{ flex: 1 }}>
                 <span className={`topic-status ${t.status}`}>{t.status}</span>
                 <div className="topic-name" style={{ marginTop: '0.4rem' }}>{t.topic}</div>
@@ -335,9 +338,9 @@ Why quiz this: [one sentence]`
                 <button className="ghost" onClick={() => setEditing(t)}>Edit</button>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          </div>
+        )
+      )}
 
       <div className="card">
         <span className="card-deco" /><span className="card-deco-bl" />
