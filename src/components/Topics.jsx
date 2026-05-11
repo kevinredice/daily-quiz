@@ -45,19 +45,12 @@ export default function Topics({ adapter }) {
 
 Good topics: specific and defensible (e.g. "Pricing power and cost pass-through", "Ptolemaic vs Copernican models"). Bad topics: too broad ("economics"), too narrow ("Apple's Q3"), too time-bound.
 
-For each, write:
-- topic: short title (max 60 chars)
-- context: 100–300 word study note — key claims, mechanisms, sources, contested points. Dense and specific.
-- tags: 1–3 lowercase strings
-- rationale: one sentence on why it's quizzable
-- id: kebab-case slug
+For each topic, write it up like this:
 
-Reply with ONLY this JSON, no preamble:
-{
-  "proposals": [
-    { "id": "...", "topic": "...", "context": "...", "tags": [...], "rationale": "..." }
-  ]
-}`
+## [Topic title]
+[100–300 word study note: key claims, mechanisms, sources, contested points. Dense and specific — facts over vague gestures.]
+Tags: [1–3 lowercase tags]
+Why quiz this: [one sentence]`
   }
 
   function copyPrompt() {
@@ -78,16 +71,6 @@ Reply with ONLY this JSON, no preamble:
     setProposeError(null)
     setProposing(true)
     try {
-      // If the pasted content is already structured JSON from an AI chatbot, use it directly.
-      try {
-        const direct = JSON.parse(pasted.trim())
-        if (direct.proposals && Array.isArray(direct.proposals)) {
-          loadProposals(direct.proposals)
-          setProposing(false)
-          return
-        }
-      } catch (_) { /* not JSON — fall through to Claude */ }
-
       if (!settings.api_key) { setProposeError('Add an Anthropic API key in Settings first.'); return }
       const ps = await proposeNewTopics({ apiKey: settings.api_key, pastedContent: pasted, existingTopicNames: topics.map(t => t.topic) })
       loadProposals(ps)
@@ -226,7 +209,7 @@ Reply with ONLY this JSON, no preamble:
             <div className="eyebrow">Option 3 — Paste content or AI output</div>
             <h3 style={{ marginBottom: '0.6rem' }}>Paste anything and Claude will extract topics.</h3>
             <p style={{ fontFamily: 'var(--serif)', color: 'var(--ink-soft)', margin: '0 0 1rem' }}>
-              Articles, notes, chat excerpts — or the JSON output from your AI chatbot if you used the prompt above.
+              Articles, notes, chat excerpts — or paste the output from your AI chatbot if you used the prompt above.
             </p>
             <div className="field">
               <textarea value={pasted} onChange={e => setPasted(e.target.value)} rows={7} placeholder="Paste anything substantive." />
