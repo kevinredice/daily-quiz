@@ -363,6 +363,15 @@ function ActiveQuiz({ quiz, responses, currentIdx, setCurrentIdx, onAnswerMC, on
 
         {error && <div className="alert" style={{ marginTop: '1rem' }}>{error}</div>}
 
+        <div style={{ marginTop: '1.2rem', paddingTop: '1rem', borderTop: '1px solid var(--rule-soft)' }}>
+          <a
+            href={`https://www.google.com/search?q=${encodeURIComponent(q.topic_name)}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{ fontSize: '0.78rem', fontFamily: 'var(--mono)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-mute)' }}
+          >No clue? Search this topic →</a>
+        </div>
+
         <div className="btn-row">
           <button className="ghost" disabled={currentIdx === 0} onClick={() => setCurrentIdx(currentIdx - 1)}>← Previous</button>
           {currentIdx < quiz.questions.length - 1 && (
