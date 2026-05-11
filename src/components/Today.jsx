@@ -356,7 +356,7 @@ function ActiveQuiz({ quiz, responses, currentIdx, setCurrentIdx, onAnswerMC, on
               href={`https://www.google.com/search?q=${encodeURIComponent(q.prompt)}`}
               target="_blank"
               rel="noreferrer"
-              style={{ display: 'inline-block', marginTop: '0.8rem', fontSize: '0.8rem', fontFamily: 'var(--mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}
+              style={{ display: 'block', marginTop: '0.8rem', fontSize: '0.8rem', fontFamily: 'var(--mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}
             >Search this →</a>
           </div>
         )}
