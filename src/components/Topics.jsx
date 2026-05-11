@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { SELECTION_CONSTANTS } from '../lib/selection.js'
-import { proposeNewTopics } from '../lib/anthropic.js'
+import { proposeNewTopics, generateTopicDetails } from '../lib/anthropic.js'
 
 function slugify(s) {
   return s.toLowerCase()
@@ -24,6 +24,15 @@ export default function Topics({ adapter }) {
   const [proposing, setProposing] = useState(false)
   const [proposeError, setProposeError] = useState(null)
 
+  // Prompt generator state
+  const [topicCount, setTopicCount] = useState(5)
+  const [copied, setCopied] = useState(false)
+
+  // Named topics state
+  const [namedTopics, setNamedTopics] = useState('')
+  const [generatingDetails, setGeneratingDetails] = useState(false)
+  const [detailsError, setDetailsError] = useState(null)
+
   async function reload() {
     const [t, s] = await Promise.all([adapter.getTopics(), adapter.getSettings()])
     setTopics(t)
@@ -31,21 +40,77 @@ export default function Topics({ adapter }) {
   }
   useEffect(() => { reload() }, [adapter])
 
+  function buildPrompt() {
+    return `I'm building a spaced repetition quiz bank. Review our recent conversations and pick out ${topicCount} topics worth retaining — concepts, arguments, or facts I've engaged with that are meaty enough to quiz on in 6 months.
+
+Good topics: specific and defensible (e.g. "Pricing power and cost pass-through", "Ptolemaic vs Copernican models"). Bad topics: too broad ("economics"), too narrow ("Apple's Q3"), too time-bound.
+
+For each, write:
+- topic: short title (max 60 chars)
+- context: 100–300 word study note — key claims, mechanisms, sources, contested points. Dense and specific.
+- tags: 1–3 lowercase strings
+- rationale: one sentence on why it's quizzable
+- id: kebab-case slug
+
+Reply with ONLY this JSON, no preamble:
+{
+  "proposals": [
+    { "id": "...", "topic": "...", "context": "...", "tags": [...], "rationale": "..." }
+  ]
+}`
+  }
+
+  function copyPrompt() {
+    navigator.clipboard.writeText(buildPrompt())
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  function loadProposals(ps) {
+    setProposals(ps)
+    const edits = {}
+    ps.forEach((p, i) => { edits[i] = { ...p } })
+    setProposalEdits(edits)
+  }
+
   async function propose() {
-    if (!settings.api_key) { setProposeError('Add an Anthropic API key in Settings first.'); return }
     if (!pasted.trim()) { setProposeError('Paste some content first.'); return }
     setProposeError(null)
     setProposing(true)
     try {
+      // If the pasted content is already structured JSON from an AI chatbot, use it directly.
+      try {
+        const direct = JSON.parse(pasted.trim())
+        if (direct.proposals && Array.isArray(direct.proposals)) {
+          loadProposals(direct.proposals)
+          setProposing(false)
+          return
+        }
+      } catch (_) { /* not JSON — fall through to Claude */ }
+
+      if (!settings.api_key) { setProposeError('Add an Anthropic API key in Settings first.'); return }
       const ps = await proposeNewTopics({ apiKey: settings.api_key, pastedContent: pasted, existingTopicNames: topics.map(t => t.topic) })
-      setProposals(ps)
-      const edits = {}
-      ps.forEach((p, i) => { edits[i] = { ...p } })
-      setProposalEdits(edits)
+      loadProposals(ps)
     } catch (e) {
       setProposeError(e.message)
     } finally {
       setProposing(false)
+    }
+  }
+
+  async function generateDetails() {
+    const names = namedTopics.split('\n').map(s => s.trim()).filter(Boolean)
+    if (names.length === 0) { setDetailsError('Enter at least one topic name.'); return }
+    if (!settings.api_key) { setDetailsError('Add an Anthropic API key in Settings first.'); return }
+    setDetailsError(null)
+    setGeneratingDetails(true)
+    try {
+      const ps = await generateTopicDetails({ apiKey: settings.api_key, topicNames: names })
+      loadProposals(ps)
+    } catch (e) {
+      setDetailsError(e.message)
+    } finally {
+      setGeneratingDetails(false)
     }
   }
 
@@ -94,20 +159,74 @@ export default function Topics({ adapter }) {
         />
       )}
       {!editing && (
-        <div className="card">
-          <span className="card-deco" /><span className="card-deco-bl" />
-          <div className="eyebrow">Get started</div>
-          <h2>Add your first topic.</h2>
-          <p style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem', color: 'var(--ink-soft)', margin: '0 0 1.5rem' }}>
-            A topic is anything you want to retain — a concept, an argument, a set of facts. Give it a title and write a short paragraph of context: the key claims, mechanisms, or details you'd want to be tested on.
-          </p>
-          <div className="btn-row" style={{ marginBottom: '2rem' }}>
-            <button className="primary" onClick={() => setEditing('new')}>+ Add manually</button>
+        <>
+          <div className="card">
+            <span className="card-deco" /><span className="card-deco-bl" />
+            <div className="eyebrow">Get started</div>
+            <h2>Build your topic bank.</h2>
+            <p style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem', color: 'var(--ink-soft)', margin: '0 0 0.5rem' }}>
+              A topic is anything you want to retain — a concept, an argument, a set of facts. There are three ways to add them.
+            </p>
           </div>
-          <div style={{ borderTop: '1px solid var(--rule-soft)', paddingTop: '1.5rem' }}>
-            <div className="eyebrow" style={{ marginBottom: '0.6rem' }}>Or let Claude propose topics</div>
-            <p style={{ fontFamily: 'var(--serif)', color: 'var(--ink-soft)', margin: '0 0 1rem', fontSize: '1rem' }}>
-              Paste an article, notes, or anything substantive. Claude will extract 1–3 quizzable topics with context for you to review.
+
+          {/* Option 1: Prompt for AI chatbot */}
+          <div className="card">
+            <span className="card-deco" /><span className="card-deco-bl" />
+            <div className="eyebrow">Option 1 — Use your AI chatbot</div>
+            <h3 style={{ marginBottom: '0.6rem' }}>Get topics from your recent chats.</h3>
+            <p style={{ fontFamily: 'var(--serif)', color: 'var(--ink-soft)', margin: '0 0 1rem' }}>
+              Copy this prompt, paste it into Claude, ChatGPT, or whichever AI you use most. It will scan your recent conversations and return topics in the right format. Paste the response in the box below.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.8rem' }}>
+              <label style={{ margin: 0, whiteSpace: 'nowrap' }}>How many topics?</label>
+              <input
+                type="number" min={1} max={20} value={topicCount}
+                onChange={e => setTopicCount(Math.max(1, Math.min(20, Number(e.target.value))))}
+                style={{ width: '5rem' }}
+              />
+            </div>
+            <textarea
+              readOnly
+              value={buildPrompt()}
+              rows={6}
+              style={{ fontFamily: 'var(--mono)', fontSize: '0.78rem', color: 'var(--ink-soft)', cursor: 'text', resize: 'none' }}
+            />
+            <div className="btn-row">
+              <button className="primary" onClick={copyPrompt}>{copied ? '✓ Copied' : 'Copy prompt'}</button>
+            </div>
+          </div>
+
+          {/* Option 2: Name topics, Claude fills details */}
+          <div className="card">
+            <span className="card-deco" /><span className="card-deco-bl" />
+            <div className="eyebrow">Option 2 — Name topics, Claude fills the details</div>
+            <h3 style={{ marginBottom: '0.6rem' }}>Already know what you want to learn?</h3>
+            <p style={{ fontFamily: 'var(--serif)', color: 'var(--ink-soft)', margin: '0 0 1rem' }}>
+              List topic titles one per line — Claude will write the context paragraph for each.
+            </p>
+            <div className="field">
+              <textarea
+                value={namedTopics}
+                onChange={e => setNamedTopics(e.target.value)}
+                rows={5}
+                placeholder={"Pricing power and cost pass-through\nPtolemaic vs Copernican models\nPost-quantum cryptography"}
+              />
+            </div>
+            {detailsError && <div className="alert">{detailsError}</div>}
+            <div className="btn-row">
+              <button className="primary" disabled={generatingDetails || !namedTopics.trim()} onClick={generateDetails}>
+                {generatingDetails ? <><span className="spinner" />Generating…</> : 'Generate details'}
+              </button>
+            </div>
+          </div>
+
+          {/* Option 3: Paste content */}
+          <div className="card">
+            <span className="card-deco" /><span className="card-deco-bl" />
+            <div className="eyebrow">Option 3 — Paste content or AI output</div>
+            <h3 style={{ marginBottom: '0.6rem' }}>Paste anything and Claude will extract topics.</h3>
+            <p style={{ fontFamily: 'var(--serif)', color: 'var(--ink-soft)', margin: '0 0 1rem' }}>
+              Articles, notes, chat excerpts — or the JSON output from your AI chatbot if you used the prompt above.
             </p>
             <div className="field">
               <textarea value={pasted} onChange={e => setPasted(e.target.value)} rows={7} placeholder="Paste anything substantive." />
@@ -119,7 +238,13 @@ export default function Topics({ adapter }) {
               </button>
             </div>
           </div>
-        </div>
+
+          <div style={{ textAlign: 'center', margin: '-0.5rem 0 1rem' }}>
+            <button className="ghost" onClick={() => setEditing('new')} style={{ fontSize: '0.8rem' }}>
+              + Add a topic manually instead
+            </button>
+          </div>
+        </>
       )}
       {proposals.map((p, i) => (
         <div className="card" key={i}>

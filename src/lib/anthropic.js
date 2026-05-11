@@ -137,6 +137,33 @@ Grade.`
   }
 }
 
+// === Fill in context for named topics ===
+
+export async function generateTopicDetails({ apiKey, topicNames }) {
+  const c = client(apiKey)
+
+  const sys = `You help build a personal quiz topic bank. Given a list of topic names, write a dense context paragraph for each (100-300 words): key claims, mechanisms, sources, contested points — written like study notes. Specific facts over vague gestures.
+
+Output strict JSON only: { "proposals": [{ "id": "kebab-slug", "topic": "name as given", "context": "...", "tags": ["tag1", "tag2"], "rationale": "one sentence on why it's quizzable" }] }`
+
+  const user = `Generate context for these topics:\n${topicNames.map((n, i) => `${i + 1}. ${n}`).join('\n')}`
+
+  const resp = await c.messages.create({
+    model: MODEL,
+    max_tokens: 2000,
+    system: sys,
+    messages: [{ role: 'user', content: user }],
+  })
+
+  const text = resp.content.filter(b => b.type === 'text').map(b => b.text).join('\n')
+  try {
+    const parsed = JSON.parse(extractJSON(text))
+    return parsed.proposals || []
+  } catch (e) {
+    throw new Error('Topic detail generation returned non-JSON: ' + text.slice(0, 300))
+  }
+}
+
 // === Weekly review topic generation ===
 
 export async function proposeNewTopics({ apiKey, pastedContent, existingTopicNames }) {
