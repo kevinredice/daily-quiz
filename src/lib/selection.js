@@ -183,11 +183,12 @@ export function applyQuizResults({ topics, questions, responses }) {
     if (!r) continue
     const tid = q.topic_id
     const wasCorrect = !!r.correct
-    if (!updates[tid]) updates[tid] = { delta_quizzed: 0, delta_correct: 0, delta_incorrect: 0, results: [] }
+    if (!updates[tid]) updates[tid] = { delta_quizzed: 0, delta_correct: 0, delta_incorrect: 0, results: [], prompts: [] }
     updates[tid].delta_quizzed += 1
     if (wasCorrect) updates[tid].delta_correct += 1
     else updates[tid].delta_incorrect += 1
     updates[tid].results.push(wasCorrect)
+    if (q.prompt) updates[tid].prompts.push(q.prompt)
   }
 
   // Apply
@@ -195,12 +196,14 @@ export function applyQuizResults({ topics, questions, responses }) {
     const u = updates[t.id]
     if (!u) return t
     const newRecent = [...(t.recent_results || []), ...u.results].slice(-5)
+    const newPastQuestions = [...(t.past_questions || []), ...u.prompts].slice(-20)
     return {
       ...t,
       times_quizzed: (t.times_quizzed || 0) + u.delta_quizzed,
       correct_count: (t.correct_count || 0) + u.delta_correct,
       incorrect_count: (t.incorrect_count || 0) + u.delta_incorrect,
       recent_results: newRecent,
+      past_questions: newPastQuestions,
       last_quizzed_at: todayISO,
     }
   })

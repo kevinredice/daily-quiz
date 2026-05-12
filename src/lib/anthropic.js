@@ -31,9 +31,13 @@ export async function generateQuestions({ apiKey, slotPlan, todayKey, onProgress
   const c = client(apiKey)
 
   const topicBlobs = slotPlan.map((s, i) => {
+    const past = s.topic.past_questions || []
+    const pastSection = past.length > 0
+      ? `\n<past_questions>\n${past.map(q => `- ${q}`).join('\n')}\n</past_questions>`
+      : ''
     return `<topic index="${i}" id="${s.topic.id}">
 <name>${s.topic.topic}</name>
-<context>${s.topic.context}</context>
+<context>${s.topic.context}</context>${pastSection}
 </topic>`
   }).join('\n\n')
 
@@ -46,6 +50,7 @@ Question style:
 - 4 options, exactly one correct. Distractors must be plausible — common confusions, near-misses, related-but-wrong concepts. No "all of the above" or "none of the above".
 - Vary difficulty. Some should be easy enough that a careful reader of the context gets them; some should require synthesis.
 - Multiple questions on the same topic must test different aspects — don't ask the same fact two ways.
+- If a topic includes <past_questions>, do not repeat or closely paraphrase any of them. Find a different angle.
 
 Each question must include the topic_id (from the id attribute) exactly as given in the input.
 
