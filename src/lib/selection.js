@@ -23,6 +23,12 @@ const MAX_ACTIVE_WARN = 30
 const DORMANCY_THRESHOLD_QUIZZES = 8
 const DORMANCY_THRESHOLD_ACCURACY = 0.8
 
+const DORMANCY_BY_DIFFICULTY = {
+  basic:        { quizzes: 6,  accuracy: 0.90 },
+  intermediate: { quizzes: 8,  accuracy: 0.80 },
+  advanced:     { quizzes: 10, accuracy: 0.70 },
+}
+
 function avgRecent(arr) {
   if (!arr || arr.length === 0) return 0
   return arr.reduce((s, b) => s + (b ? 1 : 0), 0) / arr.length
@@ -212,8 +218,9 @@ export function applyQuizResults({ topics, questions, responses }) {
   let activeCount = next.filter(t => t.status === 'active').length
   next = next.map(t => {
     if (t.status !== 'active') return t
-    if ((t.times_quizzed || 0) < DORMANCY_THRESHOLD_QUIZZES) return t
-    if (avgRecent(t.recent_results) < DORMANCY_THRESHOLD_ACCURACY) return t
+    const thresh = DORMANCY_BY_DIFFICULTY[t.difficulty] || DORMANCY_BY_DIFFICULTY.intermediate
+    if ((t.times_quizzed || 0) < thresh.quizzes) return t
+    if (avgRecent(t.recent_results) < thresh.accuracy) return t
     if (activeCount <= MIN_ACTIVE) return t  // floor
     activeCount -= 1
     return { ...t, status: 'dormant', dormant_since: todayISO }
@@ -246,6 +253,7 @@ export const SELECTION_CONSTANTS = {
   MAX_ACTIVE_WARN,
   DORMANCY_THRESHOLD_QUIZZES,
   DORMANCY_THRESHOLD_ACCURACY,
+  DORMANCY_BY_DIFFICULTY,
   WARMUP_GUARANTEE,
   DORMANT_RETEST_DAYS,
 }

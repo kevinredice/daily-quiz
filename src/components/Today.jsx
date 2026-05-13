@@ -85,6 +85,7 @@ export default function Today({ adapter, session }) {
         return {
           ...q,
           topic_name: s?.topic.topic ?? q.topic_id,
+          topic_difficulty: s?.topic.difficulty || 'intermediate',
           slot: s?.slot ?? 'active',
           position: i,
         }
@@ -333,7 +334,10 @@ function ActiveQuiz({ quiz, responses, currentIdx, setCurrentIdx, onAnswerMC, on
       <div className="card">
         <span className="card-deco" /><span className="card-deco-bl" />
         <span className="q-num">Question {currentIdx + 1} of {quiz.questions.length}</span>
-        <span className="q-topic">{q.topic_name}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.3rem' }}>
+          <span className="q-topic" style={{ margin: 0 }}>{q.topic_name}</span>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-mute)', border: '1px solid var(--rule)', padding: '0.1rem 0.35rem' }}>{q.topic_difficulty || 'intermediate'}</span>
+        </div>
         <div className="q-prompt">{q.prompt}</div>
 
         {q.q_type === 'mc' && (
@@ -495,12 +499,15 @@ function Results({ quiz, topics, warnings, settings, todayKey }) {
                 padding: '1rem 0',
                 borderBottom: '1px solid var(--rule-soft)',
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-                  <span className="q-topic">{q.topic_name}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    <span className="q-topic" style={{ margin: 0 }}>{q.topic_name}</span>
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-mute)', border: '1px solid var(--rule)', padding: '0.1rem 0.3rem' }}>{q.topic_difficulty || 'intermediate'}</span>
+                  </div>
                   <span style={{
                     fontFamily: 'var(--mono)', fontSize: '0.7rem',
                     color: r?.correct ? 'var(--success)' : 'var(--error)',
-                    letterSpacing: '0.15em',
+                    letterSpacing: '0.15em', whiteSpace: 'nowrap',
                   }}>{r?.correct ? '✓ CORRECT' : '✗ MISSED'}</span>
                 </div>
                 <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem', margin: '0.4rem 0 0.6rem' }}>{q.prompt}</div>

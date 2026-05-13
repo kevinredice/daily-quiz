@@ -287,7 +287,11 @@ Why quiz this: [one sentence]`
               <strong>New topics</strong> are guaranteed to appear in every quiz until they've shown up {SELECTION_CONSTANTS.WARMUP_GUARANTEE} times or are more than 7 days old.
             </p>
             <p style={{ margin: '0 0 0.8rem' }}>
-              A topic goes <strong>dormant</strong> automatically once you've quizzed it at least {SELECTION_CONSTANTS.DORMANCY_THRESHOLD_QUIZZES} times and scored {Math.round(SELECTION_CONSTANTS.DORMANCY_THRESHOLD_ACCURACY * 100)}%+ on your last 5 attempts — it means you know it well. Dormant topics still resurface for a retest every {SELECTION_CONSTANTS.DORMANT_RETEST_DAYS}+ days.
+              A topic goes <strong>dormant</strong> once you've hit the threshold for its difficulty — on your last 5 attempts:
+              basic ({SELECTION_CONSTANTS.DORMANCY_BY_DIFFICULTY.basic.quizzes}+ quizzes, {Math.round(SELECTION_CONSTANTS.DORMANCY_BY_DIFFICULTY.basic.accuracy * 100)}%+),
+              intermediate ({SELECTION_CONSTANTS.DORMANCY_BY_DIFFICULTY.intermediate.quizzes}+ quizzes, {Math.round(SELECTION_CONSTANTS.DORMANCY_BY_DIFFICULTY.intermediate.accuracy * 100)}%+),
+              advanced ({SELECTION_CONSTANTS.DORMANCY_BY_DIFFICULTY.advanced.quizzes}+ quizzes, {Math.round(SELECTION_CONSTANTS.DORMANCY_BY_DIFFICULTY.advanced.accuracy * 100)}%+).
+              Dormant topics still resurface for a retest every {SELECTION_CONSTANTS.DORMANT_RETEST_DAYS}+ days.
             </p>
             <p style={{ margin: '0 0 0.8rem' }}>
               If you <strong>miss a dormant retest</strong>, the topic goes back to active so it gets more practice.
@@ -331,7 +335,7 @@ Why quiz this: [one sentence]`
                 <span className={`topic-status ${t.status}`}>{t.status}</span>
                 <div className="topic-name" style={{ marginTop: '0.4rem' }}>{t.topic}</div>
                 <div className="topic-meta">
-                  {t.times_quizzed || 0} quizzed · {accuracy(t)} · last {t.last_quizzed_at ? t.last_quizzed_at.slice(0, 10) : 'never'}
+                  {t.difficulty || 'intermediate'} · {t.times_quizzed || 0} quizzed · {accuracy(t)} · last {t.last_quizzed_at ? t.last_quizzed_at.slice(0, 10) : 'never'}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.4rem' }}>
