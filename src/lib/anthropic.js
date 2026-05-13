@@ -37,6 +37,7 @@ export async function generateQuestions({ apiKey, slotPlan, todayKey, onProgress
       : ''
     return `<topic index="${i}" id="${s.topic.id}">
 <name>${s.topic.topic}</name>
+<difficulty>${s.topic.difficulty || 'intermediate'}</difficulty>
 <context>${s.topic.context}</context>${pastSection}
 </topic>`
   }).join('\n\n')
@@ -48,7 +49,10 @@ export async function generateQuestions({ apiKey, slotPlan, todayKey, onProgress
 Question style:
 - Test understanding, not trivia recall. Favor "why does X follow from Y" over "what year did Z happen".
 - 4 options, exactly one correct. Distractors must be plausible — common confusions, near-misses, related-but-wrong concepts. No "all of the above" or "none of the above".
-- Vary difficulty. Some should be easy enough that a careful reader of the context gets them; some should require synthesis.
+- Each topic specifies a <difficulty> level — honor it strictly:
+  - basic: factual and definitional. Tests whether the user can accurately recall or identify a core concept. A careful first-time reader should get it.
+  - intermediate: mechanistic and analytical. Tests whether the user understands how or why something works. Requires light inference beyond the text.
+  - advanced: synthesis, nuance, edge cases, or contested distinctions. Should trip up someone who half-read the material. Expect most users to miss it.
 - Multiple questions on the same topic must test different aspects — don't ask the same fact two ways.
 - If a topic includes <past_questions>, do not repeat or closely paraphrase any of them. Find a different angle.
 

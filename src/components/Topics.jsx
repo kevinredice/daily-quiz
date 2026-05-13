@@ -402,6 +402,7 @@ function TopicEditor({ topic, existingIds, onSave, onCancel, onDelete }) {
   const [context, setContext] = useState(topic?.context || '')
   const [tags, setTags] = useState((topic?.tags || []).join(', '))
   const [status, setStatus] = useState(topic?.status || 'active')
+  const [difficulty, setDifficulty] = useState(topic?.difficulty || 'intermediate')
   const [error, setError] = useState(null)
 
   function save() {
@@ -419,6 +420,7 @@ function TopicEditor({ topic, existingIds, onSave, onCancel, onDelete }) {
       context: context.trim(),
       tags: tags.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
       status,
+      difficulty,
     }
     if (isNew) {
       out.times_quizzed = 0
@@ -448,6 +450,14 @@ function TopicEditor({ topic, existingIds, onSave, onCancel, onDelete }) {
       <div className="field">
         <label>Tags (comma separated)</label>
         <input type="text" value={tags} onChange={e => setTags(e.target.value)} placeholder="economics, business" />
+      </div>
+      <div className="field">
+        <label>Difficulty</label>
+        <select value={difficulty} onChange={e => setDifficulty(e.target.value)}>
+          <option value="basic">basic — factual, definitional</option>
+          <option value="intermediate">intermediate — analysis, mechanisms</option>
+          <option value="advanced">advanced — synthesis, edge cases</option>
+        </select>
       </div>
       {!isNew && (
         <div className="field">
